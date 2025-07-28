@@ -1,0 +1,16 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  Olt:
+    build: . # Bangun image dari Dockerfile di direktori saat ini
+    ports:
+      - "5000:5000" # Map port 5000 dari host ke port 5000 di container
+    volumes:
+      - .:/app # Mount direktori saat ini (host) ke /app di container
+              # Ini berguna untuk pengembangan, perubahan kode di host akan langsung terlihat di container
+    environment:
+      FLASK_ENV: development # Set environment Flask
+    # Perintah untuk menjalankan aplikasi. Ini akan menimpa CMD di Dockerfile jika ada.
+    # Untuk Gunicorn, CMD di Dockerfile sudah cukup, tapi bisa ditimpa di sini jika perlu.
+    # command: gunicorn -w 4 -b 0.0.0.0:5000 app:app
