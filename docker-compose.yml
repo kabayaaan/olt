@@ -1,11 +1,10 @@
-# docker-compose.yml
 version: '3.8'
 
 services:
-  Olt:
+  olt:
     build: . # Bangun image dari Dockerfile di direktori saat ini
     ports:
-      - "5000:5000" # Map port 5000 dari host ke port 5000 di container
+      - "5001:5000" # Map port 5000 dari host ke port 5000 di container
     volumes:
       - .:/app # Mount direktori saat ini (host) ke /app di container
               # Ini berguna untuk pengembangan, perubahan kode di host akan langsung terlihat di container
