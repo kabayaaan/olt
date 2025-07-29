@@ -10,6 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Custom CSS (minimal, mostly for overrides or specific elements) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
@@ -22,11 +24,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .result-box.animate-in {
-            animation: fadeIn 0.3s ease-out forwards;
-        }
-
-        /* Styling for the custom message box */
-        .message-box {
             animation: fadeIn 0.3s ease-out forwards;
         }
     </style>
@@ -107,7 +104,7 @@
                 <li>Log konfigurasi yang sudah dilakukan dengan timestamp</li>
             </ul>
             <div class="flex justify-center">
-                <button onclick="showMessageBox('Fitur ini akan dikembangkan!', 'info')"
+                <button onclick="Swal.fire('Fitur ini akan dikembangkan!', '', 'info')"
                         class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg shadow-md
                                flex items-center justify-center transition duration-200 ease-in-out transform hover:scale-105">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13l-3 3m0 0l-3-3m3 3V8m0 13a9 9 0 110-18 9 9 0 010 18z"></path></svg>
@@ -118,41 +115,7 @@
     </div>
 
     <script>
-        // Fungsi untuk menampilkan pesan notifikasi kustom
-        function showMessageBox(message, type = 'info') {
-            const messageBox = document.createElement('div');
-            messageBox.textContent = message;
-            let bgColor, textColor;
-
-            switch (type) {
-                case 'success':
-                    bgColor = 'bg-green-500';
-                    textColor = 'text-white';
-                    break;
-                case 'error':
-                    bgColor = 'bg-red-500';
-                    textColor = 'text-white';
-                    break;
-                case 'warning':
-                    bgColor = 'bg-yellow-500';
-                    textColor = 'text-white';
-                    break;
-                case 'info':
-                default:
-                    bgColor = 'bg-blue-500';
-                    textColor = 'text-white';
-                    break;
-            }
-
-            messageBox.className = `fixed bottom-4 right-4 ${bgColor} ${textColor} px-4 py-2 rounded-md shadow-lg z-50 message-box`;
-            document.body.appendChild(messageBox);
-
-            setTimeout(() => {
-                messageBox.remove();
-            }, 3000); // Hilangkan pesan setelah 3 detik
-        }
-
-        // Fungsi untuk menyalin teks ke clipboard
+        // Fungsi untuk menyalin teks ke clipboard menggunakan SweetAlert2 untuk notifikasi
         function copyToClipboard(text) {
             const textarea = document.createElement('textarea');
             textarea.value = text;
@@ -162,10 +125,28 @@
             textarea.select();
             try {
                 document.execCommand('copy');
-                showMessageBox('Perintah berhasil disalin!', 'success');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil Disalin!',
+                    text: 'Perintah konfigurasi telah disalin ke clipboard.',
+                    toast: true,
+                    position: 'bottom-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
             } catch (err) {
                 console.error('Gagal menyalin teks: ', err);
-                showMessageBox('Gagal menyalin teks.', 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Menyalin!',
+                    text: 'Terjadi kesalahan saat menyalin perintah.',
+                    toast: true,
+                    position: 'bottom-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
             }
             document.body.removeChild(textarea);
         }
@@ -194,7 +175,12 @@
             // Validasi format X/X/X untuk interface OLT
             const interfaceRegex = /^\d+\/\d+\/\d+$/;
             if (!interfaceRegex.test(gponOltInterface)) {
-                showMessageBox('Format Interface GPON OLT harus X/X/X (contoh: 1/1/1).', 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Input Tidak Valid!',
+                    text: 'Format Interface GPON OLT harus X/X/X (contoh: 1/1/1).',
+                    confirmButtonText: 'OK'
+                });
                 return;
             }
 
@@ -204,14 +190,24 @@
 
             // Validasi sederhana di frontend: memastikan semua field terisi.
             if (!gponOltInterface || !sn || !onuId || !vlan || !name || !description) {
-                showMessageBox('Semua field harus diisi.', 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Input Tidak Lengkap!',
+                    text: 'Semua field harus diisi.',
+                    confirmButtonText: 'OK'
+                });
                 return;
             }
 
             // Validasi ONU ID di frontend: memastikan berupa angka dan dalam rentang yang valid.
             const onuIdNum = parseInt(onuId);
             if (isNaN(onuIdNum) || onuIdNum < 1 || onuIdNum > 128) {
-                showMessageBox('ONU ID harus berupa angka antara 1 dan 128.', 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Input Tidak Valid!',
+                    text: 'ONU ID harus berupa angka antara 1 dan 128.',
+                    confirmButtonText: 'OK'
+                });
                 return;
             }
 
