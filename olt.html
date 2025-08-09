@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Konfigurasi OLT ZTE</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    @keyframes highlightFade {
+      0% { box-shadow: 0 0 20px 5px rgba(255, 165, 0, 0.7); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
+    }
+    .highlight {
+      animation: highlightFade 2s ease-out;
+    }
+    .fade-in {
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+    }
+    .fade-in.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+  <div class="max-w-3xl mx-auto mt-10 bg-gray-800 rounded-xl shadow-lg p-6 border border-orange-500">
+    <h1 class="text-2xl font-bold text-center text-orange-400 mb-6">Konfigurasi OLT ZTE</h1>
+
+    <!-- Form -->
+    <div class="bg-gray-700 p-5 rounded-lg border border-orange-300">
+      <h2 class="text-lg font-semibold text-orange-300 mb-4">1. Masukkan Detail Konfigurasi ONT</h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block font-medium mb-1">Interface GPON OLT (X/X/X):</label>
+          <input id="interface" type="text" class="w-full bg-gray-900 text-white border border-orange-500 rounded-lg p-2 focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
+        </div>
+        <div>
+          <label class="block font-medium mb-1">Serial Number (SN) ONT:</label>
+          <input id="sn" type="text" class="w-full bg-gray-900 text-white border border-orange-500 rounded-lg p-2 focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block font-medium mb-1">ONU ID (1-128):</label>
+          <input id="onu" type="number" class="w-full bg-gray-900 text-white border border-orange-500 rounded-lg p-2 focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
+        </div>
+        <div>
+          <label class="block font-medium mb-1">VLAN ID:</label>
+          <input id="vlan" type="number" class="w-full bg-gray-900 text-white border border-orange-500 rounded-lg p-2 focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="block font-medium mb-1">Nama Pelanggan / ONT:</label>
+        <input id="nama" type="text" class="w-full bg-gray-900 text-white border border-orange-500 rounded-lg p-2 focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
+      </div>
+
+      <div class="mb-4">
+        <label class="block font-medium mb-1">Deskripsi (Alamat / Detail Lainnya):</label>
+        <input id="desc" type="text" class="w-full bg-gray-900 text-white border border-orange-500 rounded-lg p-2 focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
+      </div>
+
+      <div class="flex gap-3 justify-center">
+        <button onclick="generateOutput()" class="bg-orange-500 text-black font-semibold px-5 py-2 rounded-lg hover:bg-orange-400 transition">⚙️ Buat Konfigurasi OLT</button>
+        <button onclick="resetForm()" class="bg-red-500 text-white px-5 py-2 rounded-lg hover:bg-red-600 transition">🔄 Reset Form</button>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div id="output" class="hidden bg-gray-700 mt-6 p-4 rounded-lg border border-orange-300">
+      <h3 class="text-orange-300 font-semibold mb-2">Output Template:</h3>
+      <pre id="commandOutput" class="bg-gray-900 text-orange-200 p-3 rounded-lg overflow-x-auto fade-in"></pre>
+      <button onclick="copyToClipboard()" class="mt-3 bg-orange-500 text-black font-semibold px-4 py-2 rounded-lg hover:bg-orange-400 transition">📋 Salin Perintah</button>
+    </div>
+  </div>
+
+  <script>
+    function generateOutput() {
+      let interfaceOLT = document.getElementById("interface").value.trim();
+      let sn = document.getElementById("sn").value.trim();
+      let onu = document.getElementById("onu").value.trim();
+      let vlan = document.getElementById("vlan").value.trim();
+      let nama = document.getElementById("nama").value.trim();
+      let desc = document.getElementById("desc").value.trim();
+
+      if (!interfaceOLT || !sn || !onu || !vlan || !nama || !desc) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Input tidak lengkap!',
+          text: 'Mohon isi semua kolom sebelum membuat konfigurasi.',
+          confirmButtonColor: '#d33'
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: 'Membuat konfigurasi...',
+        text: 'Mohon tunggu sebentar',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      setTimeout(() => {
+        Swal.close();
+
+        let output = `
+interface gpon-olt_${interfaceOLT}
+onu ${onu} type ALL-GPON sn ${sn}
+exit
+interface gpon-onu_${interfaceOLT}:${onu}
+tcont 1 profile UNLIMITED
+gemport 1 tcont 1
+service-port 1 vport 1 user-vlan ${vlan} vlan ${vlan}
+name ${nama}
+description ${desc}
+exit
+pon-onu-mng gpon-onu_${interfaceOLT}:${onu}
+service 1 gemport 1 vlan ${vlan}
+exit
+        `;
+
+        let outputSection = document.getElementById("output");
+        let commandOutput = document.getElementById("commandOutput");
+
+        commandOutput.innerText = output.trim();
+        commandOutput.classList.remove("visible");
+        outputSection.classList.remove("hidden");
+
+        outputSection.classList.add("highlight");
+        setTimeout(() => {
+          outputSection.classList.remove("highlight");
+        }, 2000);
+
+        setTimeout(() => {
+          commandOutput.classList.add("visible");
+        }, 100);
+      }, 1500);
+    }
+
+    function copyToClipboard() {
+      let text = document.getElementById("commandOutput").innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil!',
+          text: 'Perintah berhasil disalin ke clipboard.',
+          showConfirmButton: false,
+          timer: 1500
+        });
+      });
+    }
+
+    function resetForm() {
+      document.querySelectorAll("#interface, #sn, #onu, #vlan, #nama, #desc").forEach(input => input.value = "");
+      document.getElementById("output").classList.add("hidden");
+
+      Swal.fire({
+        icon: 'info',
+        title: 'Form telah direset',
+        showConfirmButton: false,
+        timer: 1200
+      });
+    }
+  </script>
+</body>
+</html>
+
